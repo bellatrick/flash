@@ -1,16 +1,33 @@
 import Link from 'next/link'
-import { getCategories, getFlashcardsByCategory } from '../../../lib/api'
+import { getCategories, getFlashcardsByCategory, getFlashcards } from '../../../lib/api'
 import FlashcardCard from '../../../components/FlashcardCard'
 
 export const revalidate = 0
 
 export default async function CategoryPage({ params }) {
   const { slug } = await params;
-  const categories = await getCategories()
-  const category = categories.find(c => c.slug === slug)
-  if (!category) return <p style={{ color: '#64748b' }}>Category not found.</p>
+  let category, cards;
 
-  const cards = await getFlashcardsByCategory(category.id)
+  if (slug === 'all') {
+    category = { id: 'all', name: 'All Cards', slug: 'all' };
+    cards = await getFlashcards();
+  } else {
+    const categories = await getCategories()
+    const decodedSlug = decodeURIComponent(slug)
+    const matchingCategories = categories.filter(c => 
+      c.slug === slug || 
+      c.slug === decodedSlug || 
+      encodeURIComponent(c.slug) === slug ||
+      encodeURIComponent(c.slug) === decodedSlug
+    )
+    if (matchingCategories.length === 0) return <p style={{ color: '#64748b' }}>Category not found.</p>
+    
+    category = matchingCategories[0] // taking the first one for the title
+    
+    const allCards = await getFlashcards()
+    const matchingIds = matchingCategories.map(c => c.id)
+    cards = allCards.filter(c => matchingIds.includes(c.category_id))
+  }
 
   return (
     <div>

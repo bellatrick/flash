@@ -8,10 +8,15 @@ export const revalidate = 0
 export default async function HomePage() {
   const [categories, cards] = await Promise.all([getCategories(), getFlashcards()])
 
-  const categoryCardCounts = categories.map(cat => ({
-    ...cat,
-    count: cards.filter(c => c.category_id === cat.id).length,
-  }))
+  const categoryCardCountsMap = new Map();
+  categories.forEach(cat => {
+    if (!categoryCardCountsMap.has(cat.slug)) {
+      categoryCardCountsMap.set(cat.slug, { ...cat, count: 0 });
+    }
+    const slugCat = categoryCardCountsMap.get(cat.slug);
+    slugCat.count += cards.filter(c => c.category_id === cat.id).length;
+  });
+  const categoryCardCounts = Array.from(categoryCardCountsMap.values());
 
   const uniqueWords = new Set();
   cards.forEach(card => {
@@ -37,6 +42,7 @@ export default async function HomePage() {
         Categories
       </h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
+        <CategoryCard key="all" category={{ id: 'all', slug: 'all', name: 'All Cards', count: cards.length }} />
         {categoryCardCounts.map(cat => (
           <CategoryCard key={cat.id} category={cat} />
         ))}
