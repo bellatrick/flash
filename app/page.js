@@ -13,13 +13,23 @@ export default async function HomePage() {
     count: cards.filter(c => c.category_id === cat.id).length,
   }))
 
+  const uniqueWords = new Set();
+  cards.forEach(card => {
+    const text = `${card.answer}`.toLowerCase();
+    const words = text.match(/\p{L}+/gu) || [];
+    words.forEach(w => uniqueWords.add(w));
+  });
+  const totalUniqueWords = uniqueWords.size;
+
   return (
     <div>
       <div style={{ marginBottom: '2.5rem' }}>
         <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.25rem' }}>
           Your Flashcards
         </h1>
-        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>{cards.length} cards across {categories.length} categories</p>
+        <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
+          {cards.length} cards across {categories.length} categories &nbsp;•&nbsp; <span style={{ color: '#a78bfa', fontWeight: 600 }}>{totalUniqueWords} unique words</span>
+        </p>
       </div>
 
       {/* Categories Grid */}

@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import AudioPlayer from './AudioPlayer'
+import Link from 'next/link'
 
-export default function InteractiveFlashcard({ card }) {
+export default function InteractiveFlashcard({ card, nextCardId }) {
   const [revealed, setRevealed] = useState(false)
 
   const handleReveal = () => {
@@ -73,6 +74,19 @@ export default function InteractiveFlashcard({ card }) {
             <div style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
               <p style={{ fontSize: '0.75rem', color: '#a78bfa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem', textAlign: 'left' }}>Audio</p>
               <AudioPlayer src={card.audio_url} autoPlay={true} loop={true} />
+            </div>
+          )}
+
+          {nextCardId && (
+            <div style={{ marginTop: '2.5rem' }}>
+              <Link 
+                href={`/cards/${nextCardId}`} 
+                className="btn-primary" 
+                style={{ textDecoration: 'none', display: 'inline-block', padding: '0.75rem 2rem' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Next Card →
+              </Link>
             </div>
           )}
         </div>
