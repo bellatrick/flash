@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 
-export default function AudioPlayer({ src, autoPlay = false, loop = false }) {
+export default function AudioPlayer({ src, autoPlay = false, loop = false, onExternalEnd }) {
   const [playing, setPlaying] = useState(autoPlay)
   const [progress, setProgress] = useState(0)
   const audioRef = useRef(null)
@@ -20,7 +20,14 @@ export default function AudioPlayer({ src, autoPlay = false, loop = false }) {
   }
 
   function handleEnded() { 
-    if (!loop) {
+    if (onExternalEnd) onExternalEnd()
+    
+    if (loop) {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0
+        audioRef.current.play().catch(e => console.error("Audio loop error", e))
+      }
+    } else {
       setPlaying(false); 
       setProgress(0) 
     }
@@ -37,7 +44,7 @@ export default function AudioPlayer({ src, autoPlay = false, loop = false }) {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(139,92,246,0.08)', borderRadius: '8px', border: '1px solid rgba(139,92,246,0.2)' }}>
-      <audio ref={audioRef} src={src} onTimeUpdate={handleTimeUpdate} onEnded={handleEnded} autoPlay={autoPlay} loop={loop} />
+      <audio ref={audioRef} src={src} onTimeUpdate={handleTimeUpdate} onEnded={handleEnded} autoPlay={autoPlay} />
       <button onClick={toggle} style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#7c3aed', border: 'none', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '0.9rem' }}>
         {playing ? '⏸' : '▶'}
       </button>

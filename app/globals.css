@@ -61,3 +61,18 @@ body {
 .input::placeholder { color: #475569; }
 
 select.input option { background-color: #1e293b; }
+
+.back-link {
+  color: #64748b;
+  text-decoration: none;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.15s, transform 0.15s;
+  font-weight: 500;
+}
+.back-link:hover {
+  color: var(--purple-light);
+  transform: translateX(-2px);
+}

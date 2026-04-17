@@ -1,15 +1,44 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AudioPlayer from './AudioPlayer'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useSettings } from './SettingsProvider'
 
 export default function InteractiveFlashcard({ card, nextCardId }) {
   const [revealed, setRevealed] = useState(false)
+  const [playTimes, setPlayTimes] = useState(0)
+  const { playMode, loopCount, isLoaded } = useSettings()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (isLoaded && playMode === 'auto' && !revealed) {
+      const timer = setTimeout(() => {
+        setRevealed(true)
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [isLoaded, playMode, revealed])
+
+  const handleAudioEnd = () => {
+    if (playMode === 'auto') {
+      const nextCount = playTimes + 1;
+      setPlayTimes(nextCount);
+      
+      if (nextCount >= loopCount) {
+        if (nextCardId) {
+          router.push(`/cards/${nextCardId}`);
+        }
+      }
+    }
+  }
 
   const handleReveal = () => {
     if (!revealed) {
       setRevealed(true)
+      // Reset play tracking in case of manual override tracking
+      setPlayTimes(0)
     }
   }
 
@@ -73,7 +102,12 @@ export default function InteractiveFlashcard({ card, nextCardId }) {
           {card.audio_url && (
             <div style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
               <p style={{ fontSize: '0.75rem', color: '#a78bfa', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.75rem', textAlign: 'left' }}>Audio</p>
-              <AudioPlayer src={card.audio_url} autoPlay={true} loop={true} />
+              <AudioPlayer 
+                src={card.audio_url} 
+                autoPlay={true} 
+                loop={playMode === 'manual' || playTimes < loopCount - 1}
+                onExternalEnd={handleAudioEnd} 
+              />
             </div>
           )}
 

@@ -20,9 +20,30 @@ export default async function HomePage() {
 
   const uniqueWords = new Set();
   cards.forEach(card => {
-    const text = `${card.answer}`.toLowerCase();
+    let text = `${card.answer}`.toLowerCase();
+    
+    // Normalize French elisions into their root words so "j'ai" becomes "je" and "ai"
+    text = text.replace(/\bj'/g, 'je ')
+               .replace(/\bc'/g, 'ce ')
+               .replace(/\bm'/g, 'me ')
+               .replace(/\bt'/g, 'te ')
+               .replace(/\bs'/g, 'se ')
+               .replace(/\bn'/g, 'ne ')
+               .replace(/\bl'/g, 'le ') 
+               .replace(/\bd'/g, 'de ')
+               .replace(/\bqu'/g, 'que ')
+               .replace(/\bpuisqu'/g, 'puisque ')
+               .replace(/\blorsqu'/g, 'lorsque ')
+               .replace(/\bquoiqu'/g, 'quoique ');
+
     const words = text.match(/\p{L}+/gu) || [];
-    words.forEach(w => uniqueWords.add(w));
+    
+    // Only count words longer than 1 letter, except 'a', 'y', 'ô' which are valid French words
+    words.forEach(w => {
+      if (w.length > 1 || w === 'a' || w === 'y' || w === 'ô' || w === 'o') {
+        uniqueWords.add(w);
+      }
+    });
   });
   const totalUniqueWords = uniqueWords.size;
 

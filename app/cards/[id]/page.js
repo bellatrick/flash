@@ -23,13 +23,9 @@ export default async function CardPage({ params }) {
   return (
     <div style={{ maxWidth: '700px', margin: '0 auto' }}>
       <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-        <Link href="/" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.9rem' }}>← Back</Link>
-        {card.categories && (
-          <>
-            <span style={{ color: '#334155' }}>/</span>
-            <Link href={`/categories/${card.categories.slug}`} style={{ color: '#a78bfa', textDecoration: 'none', fontSize: '0.9rem' }}>{card.categories.name}</Link>
-          </>
-        )}
+        <Link href={card.categories ? `/categories/${card.categories.slug}` : '/'} className="back-link">
+          <span>←</span> Back to {card.categories ? card.categories.name : 'Home'}
+        </Link>
       </div>
 
       <InteractiveFlashcard card={card} nextCardId={nextCardId} />
