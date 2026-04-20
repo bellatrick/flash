@@ -48,7 +48,7 @@ export default async function CategoryPage({ params }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {cards.map(card => (
-            <FlashcardCard key={card.id} card={card} />
+            <FlashcardCard key={card.id} card={card} listContext={slug} />
           ))}
         </div>
       )}

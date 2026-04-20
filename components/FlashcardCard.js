@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 
-export default function FlashcardCard({ card }) {
+export default function FlashcardCard({ card, listContext }) {
+  const query = listContext ? `?list=${encodeURIComponent(listContext)}` : '';
   return (
-    <Link href={`/cards/${card.id}`} style={{ textDecoration: 'none' }}>
+    <Link href={`/cards/${card.id}${query}`} style={{ textDecoration: 'none' }}>
       <div
         className="card"
         style={{

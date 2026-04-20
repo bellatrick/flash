@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useSettings } from './SettingsProvider'
 
-export default function InteractiveFlashcard({ card, nextCardId }) {
+export default function InteractiveFlashcard({ card, nextCardUrl }) {
   const [revealed, setRevealed] = useState(false)
   const [playTimes, setPlayTimes] = useState(0)
   const { playMode, loopCount, isLoaded } = useSettings()
@@ -27,8 +27,8 @@ export default function InteractiveFlashcard({ card, nextCardId }) {
       setPlayTimes(nextCount);
       
       if (nextCount >= loopCount) {
-        if (nextCardId) {
-          router.push(`/cards/${nextCardId}`);
+        if (nextCardUrl) {
+          router.push(nextCardUrl);
         }
       }
     }
@@ -111,10 +111,10 @@ export default function InteractiveFlashcard({ card, nextCardId }) {
             </div>
           )}
 
-          {nextCardId && (
+          {nextCardUrl && (
             <div style={{ marginTop: '2.5rem' }}>
               <Link 
-                href={`/cards/${nextCardId}`} 
+                href={nextCardUrl} 
                 className="btn-primary" 
                 style={{ textDecoration: 'none', display: 'inline-block', padding: '0.75rem 2rem' }}
                 onClick={(e) => e.stopPropagation()}
