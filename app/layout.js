@@ -29,6 +29,9 @@ export default function RootLayout({ children }) {
               <Link href="/create" className="btn-primary" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>
                 + New Card
               </Link>
+              <Link href="/import" className="btn-secondary" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>
+                Import
+              </Link>
               <NavbarSettings />
             </div>
           </nav>
