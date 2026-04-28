@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createFlashcard, getCategories, createCategory } from '../../lib/api'
+import AudioRecorder from '../../components/AudioRecorder'
 
 export default function CreatePage() {
   const router = useRouter()
@@ -94,11 +95,17 @@ export default function CreatePage() {
 
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', color: '#a78bfa', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Audio File <span style={{ color: '#475569', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional, MP3)</span>
+              Audio <span style={{ color: '#475569', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span>
             </label>
-            <input type="file" accept="audio/mp3,audio/mpeg,audio/*" onChange={e => setAudioFile(e.target.files[0] || null)}
-              style={{ color: '#94a3b8', fontSize: '0.9rem', width: '100%' }} />
-            {audioFile && <p style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.8rem' }}>Selected: {audioFile.name}</p>}
+
+            <AudioRecorder onRecordingComplete={file => setAudioFile(file)} disabled={loading} />
+
+            <div style={{ marginTop: '0.75rem' }}>
+              <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem' }}>Or upload a file:</p>
+              <input type="file" accept="audio/*" onChange={e => setAudioFile(e.target.files[0] || null)} disabled={loading}
+                style={{ color: '#94a3b8', fontSize: '0.9rem', width: '100%', opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }} />
+            </div>
+            {audioFile && <p style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.8rem' }}>📁 Selected: {audioFile.name}</p>}
           </div>
         </div>
 

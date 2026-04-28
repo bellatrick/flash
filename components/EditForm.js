@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateFlashcard, createCategory } from '../lib/api'
+import AudioRecorder from './AudioRecorder'
 
 export default function EditForm({ card, categories: initialCategories }) {
   const router = useRouter()
@@ -92,9 +93,15 @@ export default function EditForm({ card, categories: initialCategories }) {
             </div>
           ) : null}
           {removeAudio && <p style={{ color: '#f87171', fontSize: '0.85rem', marginBottom: '0.5rem' }}>Audio will be removed on save.</p>}
-          <input type="file" accept="audio/mp3,audio/mpeg,audio/*" onChange={e => { setAudioFile(e.target.files[0] || null); setRemoveAudio(false) }}
-            style={{ color: '#94a3b8', fontSize: '0.9rem', width: '100%' }} />
-          {audioFile && <p style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.8rem' }}>New file: {audioFile.name}</p>}
+
+          <AudioRecorder onRecordingComplete={file => { setAudioFile(file); setRemoveAudio(false) }} disabled={loading} />
+
+          <div style={{ marginTop: '0.75rem' }}>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem' }}>Or upload a file:</p>
+            <input type="file" accept="audio/*" onChange={e => { setAudioFile(e.target.files[0] || null); setRemoveAudio(false) }} disabled={loading}
+              style={{ color: '#94a3b8', fontSize: '0.9rem', width: '100%', opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }} />
+          </div>
+          {audioFile && <p style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.8rem' }}>📁 New file: {audioFile.name}</p>}
         </div>
       </div>
 
