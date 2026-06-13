@@ -2,15 +2,16 @@
 
 import { useState, useEffect, use } from 'react'
 import Link from 'next/link'
-import { getCategories, getFlashcards, getSubCategories } from '../../../lib/api'
-import SelectionToolbar from '../../../components/SelectionToolbar'
+import { getCategories, getSubCategories, getFlashcardsBySubCategory } from '../../../../lib/api'
+import SelectionToolbar from '../../../../components/SelectionToolbar'
 
-export default function CategoryPage({ params }) {
-  const { slug } = use(params)
+export default function SubCategoryPage({ params }) {
+  const { slug, subslug } = use(params)
   const decodedSlug = decodeURIComponent(slug)
+  const decodedSubSlug = decodeURIComponent(subslug)
 
   const [category, setCategory] = useState(null)
-  const [subCategories, setSubCategories] = useState([])
+  const [subCategory, setSubCategory] = useState(null)
   const [cards, setCards] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -19,42 +20,45 @@ export default function CategoryPage({ params }) {
   const [selectedIds, setSelectedIds] = useState([])
 
   useEffect(() => {
-    loadCategoryData()
-  }, [slug])
+    loadSubCategoryData()
+  }, [slug, subslug])
 
-  async function loadCategoryData() {
+  async function loadSubCategoryData() {
     setLoading(true)
     try {
-      if (slug === 'all') {
-        setCategory({ id: 'all', name: 'All Cards', slug: 'all' })
-        const allCards = await getFlashcards()
-        setCards(allCards)
-        setSubCategories([])
-      } else {
-        const allCategories = await getCategories()
-        const matching = allCategories.filter(c =>
-          c.slug === slug ||
-          c.slug === decodedSlug ||
-          encodeURIComponent(c.slug) === slug ||
-          encodeURIComponent(c.slug) === decodedSlug
+      const allCategories = await getCategories()
+      const matchingCat = allCategories.filter(c =>
+        c.slug === slug ||
+        c.slug === decodedSlug ||
+        encodeURIComponent(c.slug) === slug ||
+        encodeURIComponent(c.slug) === decodedSlug
+      )
+
+      if (matchingCat.length > 0) {
+        const cat = matchingCat[0]
+        setCategory(cat)
+
+        // Find the specific sub-category
+        const subs = await getSubCategories(cat.id)
+        const matchingSub = subs.filter(s =>
+          s.slug === subslug ||
+          s.slug === decodedSubSlug ||
+          encodeURIComponent(s.slug) === subslug ||
+          encodeURIComponent(s.slug) === decodedSubSlug
         )
 
-        if (matching.length > 0) {
-          const cat = matching[0]
-          setCategory(cat)
+        if (matchingSub.length > 0) {
+          const sub = matchingSub[0]
+          setSubCategory(sub)
 
-          // Fetch sub-categories
-          const subCats = await getSubCategories(cat.id)
-          setSubCategories(subCats)
-
-          // Fetch cards
-          const allCards = await getFlashcards()
-          // Only show cards belonging directly to this category (no sub-category assigned)
-          const catCards = allCards.filter(c => c.category_id === cat.id)
-          setCards(catCards)
+          // Fetch cards in this subcategory
+          const subCards = await getFlashcardsBySubCategory(sub.id)
+          setCards(subCards)
         } else {
-          setCategory(null)
+          setSubCategory(null)
         }
+      } else {
+        setCategory(null)
       }
     } catch (err) {
       console.error(err)
@@ -64,24 +68,12 @@ export default function CategoryPage({ params }) {
   }
 
   if (loading) {
-    return <p style={{ color: '#64748b', textAlign: 'center', padding: '3rem' }}>Loading category...</p>
+    return <p style={{ color: '#64748b', textAlign: 'center', padding: '3rem' }}>Loading sub-category...</p>
   }
 
-  if (!category) {
-    return <p style={{ color: '#64748b', padding: '2rem' }}>Category not found.</p>
+  if (!category || !subCategory) {
+    return <p style={{ color: '#64748b', padding: '2rem' }}>Sub-category or Category not found.</p>
   }
-
-  // Cards at the root level of the category (no sub-category)
-  // For 'all', show all cards
-  const rootCards = slug === 'all'
-    ? cards
-    : cards.filter(c => !c.subcategory_id)
-
-  // Sub-categories list count calculations
-  const subCategoryCounts = subCategories.map(sub => {
-    const count = cards.filter(c => c.subcategory_id === sub.id).length
-    return { ...sub, count }
-  })
 
   function toggleSelectCard(cardId) {
     setSelectedIds(prev =>
@@ -94,14 +86,26 @@ export default function CategoryPage({ params }) {
   function handleActionDone() {
     setIsSelectMode(false)
     setSelectedIds([])
-    loadCategoryData()
+    loadSubCategoryData()
   }
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" className="back-link">← All Categories</Link>
-        {rootCards.length > 0 && (
+      {/* Breadcrumb Navigation */}
+      <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+          <Link href="/" className="back-link" style={{ fontSize: '0.9rem' }}>Categories</Link>
+          <span>/</span>
+          <Link href={`/categories/${category.slug}`} style={{ color: '#94a3b8', textDecoration: 'none', transition: 'color 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#a78bfa'}
+                onMouseLeave={e => e.currentTarget.style.color = '#94a3b8'}>
+            {category.name}
+          </Link>
+          <span>/</span>
+          <span style={{ color: '#cbd5e1', fontWeight: 500 }}>{subCategory.name}</span>
+        </div>
+
+        {cards.length > 0 && (
           <button
             onClick={() => {
               setIsSelectMode(!isSelectMode)
@@ -122,72 +126,22 @@ export default function CategoryPage({ params }) {
       </div>
 
       <div style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.25rem' }}>
-          {category.name}
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#e2e8f0', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>📁</span> {subCategory.name}
         </h1>
         <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
-          {slug === 'all'
-            ? `${cards.length} card${cards.length !== 1 ? 's' : ''} total`
-            : `${cards.length} card${cards.length !== 1 ? 's' : ''} in category (${rootCards.length} uncategorized)`
-          }
+          {cards.length} card{cards.length !== 1 ? 's' : ''} in this sub-category
         </p>
       </div>
 
-      {/* Render Sub-categories list first if any */}
-      {slug !== 'all' && subCategoryCounts.length > 0 && (
-        <div style={{ marginBottom: '2.5rem' }}>
-          <h2 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#a78bfa', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Sub-categories
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }}>
-            {subCategoryCounts.map(sub => (
-              <Link key={sub.id} href={`/categories/${slug}/${sub.slug}`} style={{ textDecoration: 'none' }}>
-                <div
-                  className="card"
-                  style={{
-                    padding: '1rem',
-                    cursor: 'pointer',
-                    transition: 'border-color 0.15s, transform 0.15s',
-                    background: 'rgba(30, 41, 59, 0.4)'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = 'rgba(139,92,246,0.5)'
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = 'rgba(139,92,246,0.2)'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <span style={{ fontSize: '1.1rem' }}>📁</span>
-                    <span style={{ fontWeight: 600, color: '#e2e8f0', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {sub.name}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    {sub.count} card{sub.count !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Render Cards */}
-      <h2 style={{ fontSize: '0.9rem', fontWeight: 600, color: '#a78bfa', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-        {slug === 'all' ? 'All Cards' : 'General Cards'}
-      </h2>
-
-      {rootCards.length === 0 ? (
+      {cards.length === 0 ? (
         <div className="card" style={{ padding: '3rem', textAlign: 'center', color: '#475569' }}>
-          <p style={{ marginBottom: '1rem' }}>No cards here yet.</p>
+          <p style={{ marginBottom: '1rem' }}>No cards in this sub-category yet.</p>
           <Link href="/create" className="btn-primary" style={{ textDecoration: 'none' }}>Add a card</Link>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {rootCards.map(card => {
+          {cards.map(card => {
             const isSelected = selectedIds.includes(card.id)
             const query = `?list=${encodeURIComponent(slug)}`
 
@@ -211,7 +165,7 @@ export default function CategoryPage({ params }) {
                   <input
                     type="checkbox"
                     checked={isSelected}
-                    onChange={() => {}} // Controlled by outer div click
+                    onChange={() => {}} // Controlled by outer click
                     style={{
                       accentColor: '#8b5cf6',
                       width: '18px',

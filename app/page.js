@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { getCategories, getFlashcards } from '../lib/api'
 import CategoryCard from '../components/CategoryCard'
 import CardItem from '../components/CardItem'
+import CategoryManager from '../components/CategoryManager'
 
 export const revalidate = 0
 
@@ -62,13 +63,15 @@ export default async function HomePage() {
       <h2 style={{ fontSize: '1rem', fontWeight: 600, color: '#a78bfa', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
         Categories
       </h2>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '3rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         <CategoryCard key="all" category={{ id: 'all', slug: 'all', name: 'All Cards', count: cards.length }} />
         {categoryCardCounts.map(cat => (
           <CategoryCard key={cat.id} category={cat} />
         ))}
       </div>
 
+      {/* Category Management */}
+      <CategoryManager />
     </div>
   )
 }

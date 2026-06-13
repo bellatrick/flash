@@ -1,7 +1,8 @@
 'use client'
-import { useState } from 'react'
+
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { updateFlashcard, createCategory } from '../lib/api'
+import { updateFlashcard, createCategory, getSubCategories, createSubCategory } from '../lib/api'
 import AudioRecorder from './AudioRecorder'
 
 export default function EditForm({ card, categories: initialCategories }) {
@@ -10,12 +11,27 @@ export default function EditForm({ card, categories: initialCategories }) {
   const [prompt, setPrompt] = useState(card.prompt)
   const [answer, setAnswer] = useState(card.answer)
   const [categoryId, setCategoryId] = useState(card.category_id || '')
+  const [subcategoryId, setSubcategoryId] = useState(card.subcategory_id || '')
+  const [subCategories, setSubCategories] = useState([])
   const [audioFile, setAudioFile] = useState(null)
   const [removeAudio, setRemoveAudio] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newSubCategoryName, setNewSubCategoryName] = useState('')
+  const [showNewSubCategory, setShowNewSubCategory] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (categoryId) {
+      getSubCategories(categoryId)
+        .then(setSubCategories)
+        .catch(err => console.error('Error fetching subcategories:', err))
+    } else {
+      setSubCategories([])
+      setSubcategoryId('')
+    }
+  }, [categoryId])
 
   async function handleAddCategory() {
     if (!newCategoryName.trim()) return
@@ -30,6 +46,19 @@ export default function EditForm({ card, categories: initialCategories }) {
     }
   }
 
+  async function handleAddSubCategory() {
+    if (!newSubCategoryName.trim() || !categoryId) return
+    try {
+      const subCat = await createSubCategory(categoryId, newSubCategoryName.trim())
+      setSubCategories(prev => [...prev, subCat].sort((a, b) => a.name.localeCompare(b.name)))
+      setSubcategoryId(subCat.id)
+      setNewSubCategoryName('')
+      setShowNewSubCategory(false)
+    } catch {
+      setError('Sub-category name already exists or is invalid.')
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!prompt.trim() || !answer.trim()) { setError('Prompt and answer are required.'); return }
@@ -40,6 +69,7 @@ export default function EditForm({ card, categories: initialCategories }) {
         prompt: prompt.trim(),
         answer: answer.trim(),
         categoryId: categoryId || null,
+        subcategoryId: subcategoryId || null,
         audioFile: removeAudio ? null : audioFile,
         removeAudio,
         existingAudioPath: card.audio_path,
@@ -69,7 +99,7 @@ export default function EditForm({ card, categories: initialCategories }) {
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', color: '#a78bfa', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Category</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <select className="input" value={categoryId} onChange={e => setCategoryId(e.target.value)} style={{ flex: 1 }}>
+            <select className="input" value={categoryId} onChange={e => { setCategoryId(e.target.value); setSubcategoryId('') }} style={{ flex: 1 }}>
               <option value="">No category</option>
               {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
             </select>
@@ -83,6 +113,26 @@ export default function EditForm({ card, categories: initialCategories }) {
             </div>
           )}
         </div>
+
+        {categoryId && (
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', color: '#a78bfa', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sub-category</label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <select className="input" value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)} style={{ flex: 1 }}>
+                <option value="">No sub-category</option>
+                {subCategories.map(sub => <option key={sub.id} value={sub.id}>{sub.name}</option>)}
+              </select>
+              <button type="button" className="btn-secondary" onClick={() => setShowNewSubCategory(!showNewSubCategory)}>+ New Sub</button>
+            </div>
+            {showNewSubCategory && (
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <input className="input" type="text" value={newSubCategoryName} onChange={e => setNewSubCategoryName(e.target.value)}
+                  placeholder="Sub-category name..." style={{ flex: 1 }} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSubCategory())} />
+                <button type="button" className="btn-primary" onClick={handleAddSubCategory}>Add</button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', color: '#a78bfa', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Audio</label>
